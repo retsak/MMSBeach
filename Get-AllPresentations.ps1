@@ -1,0 +1,36 @@
+# scrape website for all links containing files
+# and download them
+$res = Invoke-WebRequest -Uri "https://mmsmiami.sched.com/list/descriptions/"
+
+$res.ParsedHtml.documentElement.getElementsByClassName('sched-container') | % {
+    $result = $_
+    if ($result.innerHTML -like "*sched-container-inner*" -and $result.innerHTML -like "*sched-file*") {
+        $eventName = (($result.innerText).Split([Environment]::NewLine)[0]).Trim()
+        [System.IO.Path]::GetInvalidFileNameChars() | ForEach-Object {
+            if ($_.length -gt 0) {
+                $eventName = $eventName.Replace($_, '_')
+            }
+        }
+        $files = ($result.getElementsByTagName('div') | Where-Object {$_.ClassName -match '\bsched-file\b'}).innerHTML
+        $files | ForEach-Object {
+            $file = $_
+            $file = ($file.Split(" ") | Where-Object {$_ -match "href"}).replace("href=", "").replace('"','')
+            $fileName = $file.Split('/')
+            $fileName = $fileName[$fileName.count - 1]
+            $fileName = $fileName.replace('%20',' ')
+            $eventName
+            $file
+            $fileName
+            [System.IO.Path]::GetInvalidFileNameChars() | ForEach-Object {
+                if ($_.length -gt 0) {
+                    $fileName = $fileName.Replace($_, '_')
+                }
+            }
+            if (!(Test-Path $eventName)) {
+                New-Item -Type Directory -Path $eventName
+            }
+
+            Invoke-WebRequest $file -OutFile "$eventName\$fileName" -Verbose
+        }
+    }
+}
