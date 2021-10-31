@@ -19,7 +19,6 @@ $res.ParsedHtml.documentElement.getElementsByClassName('sched-container') | ForE
             $fileName = $fileName[$fileName.count - 1]
             #Fix URL encoding
             $fileName = [uri]::UnescapeDataString($fileName)
-            [uri]::e   
             $eventName
             $file
             $fileName
